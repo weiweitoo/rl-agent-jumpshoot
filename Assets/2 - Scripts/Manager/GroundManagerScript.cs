@@ -39,7 +39,6 @@ public class GroundManagerScript : MonoBehaviour {
 	}
 
 	public void GenerateGround(){
-		Debug.Log("123");
 		DifficultyCalculation();
 		Vector2 position = new Vector2(0,initOffSet + groundIndex * distanceToNextGround);
 		GameObject newGroundObj = Instantiate(groundPrefab,position,Quaternion.identity);
@@ -50,25 +49,13 @@ public class GroundManagerScript : MonoBehaviour {
 
 	void SetGroundAttribute(GameObject obj){
 		// Random Type
-		GroundScript.GroundType groundType = (GroundScript.GroundType)Random.Range(0, 3);
 		float velocity = 0;
 		Vector2 newScale = new Vector2(groundWidth,groundHeight);
 
-		if(groundType == GroundScript.GroundType.Normal){
-			velocity = Random.Range(minVelocity,maxVelocity);
-			newScale = new Vector2(groundWidth,groundHeight);
-		}
-		else if(groundType == GroundScript.GroundType.JumpHigh){
-			velocity = Random.Range(minVelocity,maxVelocity);
-			obj.GetComponent<GroundScript>().SetColor(10,10,10);
-			newScale = new Vector2(groundWidth * 0.8f,groundHeight * 0.75f);
-		}
-		else if(groundType == GroundScript.GroundType.TimeBomb){
-			velocity = Random.Range(minVelocity * 1.25f,maxVelocity * 1.25f);
-			newScale = new Vector2(groundWidth,groundHeight);
-		}
+		velocity = Random.Range(minVelocity,maxVelocity);
+		newScale = new Vector2(groundWidth,groundHeight);
 
-		obj.GetComponent<GroundScript>().SetGround(newScale,0,0,velocity,groundType);
+		obj.GetComponent<GroundScript>().SetGround(newScale,0,0,velocity);
 	}
 
 	void DifficultyCalculation(){

@@ -13,13 +13,12 @@ MonoBehaviour:
   m_Name: JumpShootAgent_Player
   m_EditorClassIdentifier: 
   brainParameters:
-    vectorObservationSize: 26
-    numStackedVectorObservations: 10
-    vectorActionSize: 0200000002000000
+    vectorObservationSize: 8
+    numStackedVectorObservations: 30
+    vectorActionSize: 02000000
     cameraResolutions: []
     vectorActionDescriptions:
     - Jump
-    - Shoot
     vectorActionSpaceType: 0
   keyContinuousPlayerActions: []
   axisContinuousPlayerActions: []
@@ -29,10 +28,4 @@ MonoBehaviour:
     value: 0
   - key: 13
     branchIndex: 0
-    value: 1
-  - key: 0
-    branchIndex: 1
-    value: 0
-  - key: 32
-    branchIndex: 1
     value: 1

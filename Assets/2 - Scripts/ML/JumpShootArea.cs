@@ -10,7 +10,6 @@ public class JumpShootArea : Area
 	public GameObject playerParent;
 	public GameObject groundPrefab;
 	public GameObject groundHolder;
-    public GameObject followCamera;
 	public int initOffSet = -4;
 	public int distanceToNextGround = 8;
 	public int initialGround = 5;
@@ -28,10 +27,6 @@ public class JumpShootArea : Area
 	public float velocityGrowRateAdjust = 0.1f;	
 	[ReadOnly] public int difficultyLevel = 1;
     public TextMeshPro scoreText;
-    private int step;
-    public TextMeshPro stepText;
-    private int stepBest;
-    public TextMeshPro stepBestText;
     private GameObject currentPlayer;
 
 	public void InitGround(){
@@ -43,8 +38,9 @@ public class JumpShootArea : Area
 		Vector2 position = new Vector2(0,-3.5f);
 		GameObject newGroundObj = Instantiate(groundPrefab,position,Quaternion.identity);
 		newGroundObj.transform.SetParent(groundHolder.transform);
+		newGroundObj.GetComponent<GroundScript>().xOffset = transform.localPosition.x;
+		newGroundObj.GetComponent<GroundScript>().yOffset = transform.localPosition.y;
         SetGroundAttribute(newGroundObj);
-        // newGroundObj.GetComponent<GroundScript>().velocity = 0;
 
 		for(int i = 0; i < initialGround;i++){
 			GenerateGround();
@@ -56,32 +52,21 @@ public class JumpShootArea : Area
 		Vector2 position = new Vector2(0,initOffSet + groundIndex * distanceToNextGround);
 		GameObject newGroundObj = Instantiate(groundPrefab,position,Quaternion.identity);
 		newGroundObj.transform.SetParent(groundHolder.transform);
+		newGroundObj.GetComponent<GroundScript>().xOffset = transform.localPosition.x;
+		newGroundObj.GetComponent<GroundScript>().yOffset = transform.localPosition.y;
 		SetGroundAttribute(newGroundObj);
 		groundIndex++;
 	}
 
 	void SetGroundAttribute(GameObject obj,bool movement = false){
-
-		// Random Type
-		GroundScript.GroundType groundType = (GroundScript.GroundType)Random.Range(0, 3);
 		float velocity = 0;
 		Vector2 newScale = new Vector2(groundWidth,groundHeight);
 
-		if(groundType == GroundScript.GroundType.Normal){
-			velocity = Random.Range(minVelocity,maxVelocity);
-			newScale = new Vector2(groundWidth,groundHeight);
-		}
-		else if(groundType == GroundScript.GroundType.JumpHigh){
-			velocity = Random.Range(minVelocity,maxVelocity);
-			obj.GetComponent<GroundScript>().SetColor(10,10,10);
-			newScale = new Vector2(groundWidth * 0.8f,groundHeight * 0.75f);
-		}
-		else if(groundType == GroundScript.GroundType.TimeBomb){
-			velocity = Random.Range(minVelocity * 1.25f,maxVelocity * 1.25f);
-			newScale = new Vector2(groundWidth,groundHeight);
-		}
+		// velocity = Random.Range(minVelocity,maxVelocity);
+		velocity = (Random.Range(0,1) > 0.5)? Random.Range(minVelocity,maxVelocity):Random.Range(-maxVelocity,-minVelocity);
+		newScale = new Vector2(groundWidth,groundHeight);
 
-		obj.GetComponent<GroundScript>().SetGround(newScale,0,0,velocity,groundType);
+		obj.GetComponent<GroundScript>().SetGround(newScale,0,0,velocity);
 	}
 
 	void DifficultyCalculation(){
@@ -107,38 +92,24 @@ public class JumpShootArea : Area
         if(currentPlayer != null){
             Destroy(currentPlayer);
         }
-
         InitGround();
-		Vector2 position = new Vector2(0,-2.6f);
+		Vector2 position = new Vector2(0+transform.localPosition.x,-2.65f+transform.localPosition.y);
         GameObject newPlayer = Instantiate(playerPrefab,position,Quaternion.identity);
 		newPlayer.transform.SetParent(playerParent.transform);
         newPlayer.GetComponent<PlayerScript>().area = transform.gameObject;
         newPlayer.GetComponent<PlayerScript>().playerParent = transform.FindChild("PlayerParent").gameObject;
         newPlayer.GetComponent<JumpShootAgent>().area = transform.gameObject;
-        followCamera.GetComponent<CameraFollowPlayerScript>().Reset();
-        followCamera.GetComponent<CameraFollowPlayerScript>().player = newPlayer.gameObject;
         currentPlayer = newPlayer;
-
-        step = 0;
     }
 
     public void UpdateScore(float score){
         scoreText.text = score.ToString("0.00");
     }
 
-    public void StepSuccess(){
-        step++;
-        stepText.text = step.ToString();
-
-        if(step > stepBest){
-            stepBest = step;
-            stepBestText.text = stepBest.ToString();
-        }
-
-        if(step > initialGround){
-            currentPlayer.GetComponent<JumpShootAgent>().AddUpdateReward(1.0f);
-            currentPlayer.GetComponent<JumpShootAgent>().EspisodeDone();
-            Debug.Log("Reach the Top");
-        }
-    }
+	public Transform GetGround(int x){
+		if(x < 0){
+			x = 0;
+		}
+		return groundHolder.transform.GetChild(x);
+	}
 }

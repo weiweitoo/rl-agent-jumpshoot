@@ -7,12 +7,22 @@ public class JumpShootAcademy : Academy
 {
     private JumpShootArea[] areas;
     // public JumpShootAgent agent;
-    public bool done = false;
+    public int doneCount = 0;
+    public int areaCount;
 
-    public override void AcademyStep(){
-        if(done)
+    void Start(){
+        areaCount = GameObject.FindObjectsOfType<JumpShootArea>().Length;
+    }
+
+    public void AddDone(){
+        doneCount++;
+    }
+
+    public override void AcademyStep(){        
+        if(doneCount >= areaCount)
         {
             Done();
+            doneCount = 0;
         }
     }
 
@@ -20,6 +30,12 @@ public class JumpShootAcademy : Academy
     /// Reset the academy
     /// </summary>
     public override void AcademyReset(){
+        StartCoroutine(Wait());
+        
+    }
+
+    IEnumerator Wait(){
+        // yield return new WaitForSecondsRealtime(2f);
         if (areas == null)
         {
             areas = GameObject.FindObjectsOfType<JumpShootArea>();
@@ -31,7 +47,7 @@ public class JumpShootAcademy : Academy
             area.initialGround = (int)resetParameters["initial_ground"];
             area.ResetArea();
         }
-        done = false;
+        yield break;
     }
 
 }

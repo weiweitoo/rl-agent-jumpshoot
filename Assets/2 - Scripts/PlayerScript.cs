@@ -23,14 +23,11 @@ public class PlayerScript : MonoBehaviour {
 	[ReadOnly] public bool isDead = false;
 	[ReadOnly] public float previousPosXParent;
 	[ReadOnly] public float ScreenRadiusInWorldX;
-	[ReadOnly] public float hueValue;
 	[ReadOnly] public PlayerState currentPlayerState;
-	[ReadOnly] public GroundScript.GroundType standingGroundType;
-	[ReadOnly] public bool initialCollide = true;
-	[ReadOnly] public bool allowSlowMotion;
 	Rigidbody2D rigidBody2DComponent;
 	BoxCollider2D boxCollider2D;
 	JumpShootAgent agent;
+	public int stepCount = 0;
 	
 	void Awake () {
 		rigidBody2DComponent = GetComponent<Rigidbody2D>();
@@ -40,89 +37,80 @@ public class PlayerScript : MonoBehaviour {
 	}
 
 	void Start(){
-		initialCollide = true;
-		hueValue = Random.Range(0,1f);
-		ChangeBackgroundColor();
 	}
 	
 	void Update () {
 		GetInput();
 		FallChecking();
-		BounceAtWall();
+		// BounceAtWall();
 		GetPreviousPositionOfParent();
 		DeadCheck();
 	}
 
 	void OnCollisionEnter2D(Collision2D target){
+		if(isDead){
+			return;
+		}
+
 		// Get Standing Groud Type
 		GroundScript groundScriptComponent = target.gameObject.GetComponent<GroundScript>();
-		standingGroundType = groundScriptComponent.groundType;
 
 		rigidBody2DComponent.velocity = Vector2.zero;
 		currentPlayerState = PlayerState.Standing;
 		transform.SetParent(target.gameObject.transform);
 		GetPreviousPositionOfParent();
-		if(initialCollide == false){
-			if(groundScriptComponent.GetStepped() == false){
-				groundScriptComponent.Stepped();
-				agent.AddUpdateReward(1f);
-				area.GetComponent<JumpShootArea>().StepSuccess();
-				Debug.Log("Step success");
-			}
-			else
-			{
-				agent.AddUpdateReward(-0.9f);
-			}
-			
-			StartCoroutine(target.gameObject.GetComponent<GroundScript>().LandingEffect());
-			GameObject landingEffect = Instantiate(landingEffectPrefab,transform.position, Quaternion.identity);
-			Destroy(landingEffect,0.1f);
+		if(groundScriptComponent.GetStepped() == false){
+			groundScriptComponent.Stepped();
+			agent.AddUpdateReward(0.5f);
+			Debug.Log("Step success");
+			stepCount++;
+			CheckReachTop();
 		}
 		else
 		{
-			initialCollide = false;
+			isDead = true;
+			Debug.Log("Step Repeated");
+			agent.AddUpdateReward(-1f);
+			agent.EspisodeDone();
+			StopPlayer();
 		}
+		
+		GameObject landingEffect = Instantiate(landingEffectPrefab,transform.position, Quaternion.identity);
+		Destroy(landingEffect,0.1f);
+		
 	}
 
 	IEnumerator OnCollisionExit2D(Collision2D target){
-		yield return new WaitForSeconds(0.1f);
-		if(currentPlayerState == PlayerState.Jumping){
+		// yield return new WaitForSeconds(0.2f);
+		// if(currentPlayerState == PlayerState.Jumping){
 			// area.GetComponent<JumpShootArea>().GenerateGround();
 			// agent.AddUpdateReward(0.1f);
-			try{
-				Destroy(target.gameObject);
+			// try{
+				// Debug.Log(target.gameObject);
+				// Destroy(target.gameObject);
 				// Debug.Log("Destroy");
-			}
-			catch{
+			// }
+			// catch{
 				// do nothing. just want to hide the error
-			}
-		}
+			// }
+		// }
 		yield break;
+	}
+
+	void CheckReachTop(){
+		if(stepCount > area.GetComponent<JumpShootArea>().initialGround){
+			PlayerWin();
+			agent.AddUpdateReward(1f);
+			agent.EspisodeDone();
+		}
 	}
 
 	void GetPreviousPositionOfParent(){
 		previousPosXParent = transform.parent.transform.position.x;
 	}
 
-	float ParentVelocity(){
+	public float ParentVelocity(){
 		return (transform.parent.transform.position.x - previousPosXParent) * throwSpeed / Time.deltaTime;
-	}
-
-	void BounceAtWall(){
-		float screenWidth = GameObject.Find("Main Camera").GetComponent<Camera>().ScreenToWorldPoint(new Vector2(Screen.width,0)).x - wallAdjustment;
-		float transformX = rigidBody2DComponent.position.x;
-
-		if(transformX < -screenWidth){
-			rigidBody2DComponent.position = new Vector2(-screenWidth,rigidBody2DComponent.position.y);
-			rigidBody2DComponent.velocity = new Vector2(-rigidBody2DComponent.velocity.x,rigidBody2DComponent.velocity.y);
-			PlayWallBounceEffect();
-		}
-
-		if(transformX >= screenWidth){
-			rigidBody2DComponent.position = new Vector2(screenWidth,rigidBody2DComponent.position.y);
-			rigidBody2DComponent.velocity = new Vector2(-rigidBody2DComponent.velocity.x,rigidBody2DComponent.velocity.y);
-			PlayWallBounceEffect();
-		}
 	}
 
 	void GetInput(){
@@ -154,12 +142,10 @@ public class PlayerScript : MonoBehaviour {
 	void Jump(){
 		boxCollider2D.enabled = false;
 		currentPlayerState = PlayerState.Jumping;
+
+		rigidBody2DComponent.velocity = new Vector2(0,jumpSpeed);
+		// rigidBody2DComponent.velocity = new Vector2(ParentVelocity(),jumpSpeed);
 	
-		if(standingGroundType == GroundScript.GroundType.JumpHigh){
-			rigidBody2DComponent.velocity = new Vector2(ParentVelocity(),jumpSpeed * 1.08f);
-		}else{
-			rigidBody2DComponent.velocity = new Vector2(ParentVelocity(),jumpSpeed);
-		}
 		transform.SetParent(playerParent.transform);
 	}
 
@@ -168,18 +154,26 @@ public class PlayerScript : MonoBehaviour {
 			isDead = true;
 			StopPlayer();
 			agent.AddUpdateReward(-1f);
-			// GameObject.Find("_GameManager").GetComponent<GameManagerScript>().Dead();
-			// TODO espisode done first or add updatereward first?
 			agent.EspisodeDone();
-			Debug.Log("Die again");
 		}
 	}
 
 	void StopPlayer(){
 		rigidBody2DComponent.isKinematic = true;
 		rigidBody2DComponent.velocity = new Vector2(0,0);
+		// rigidBody2DComponent.gravityScale = 0;
+		// rigidBody2DComponent.constraints = RigidbodyConstraints2D.FreezePositionY;
+		GetComponent<SpriteRenderer>().color = new Color(1f,0.30196078f, 0.30196078f);
 	}
 
+	void PlayerWin(){
+		rigidBody2DComponent.isKinematic = true;
+		rigidBody2DComponent.velocity = new Vector2(0,0);
+		rigidBody2DComponent.gravityScale = 0;
+		// rigidBody2DComponent.constraints = RigidbodyConstraints2D.FreezePositionY;
+		GetComponent<SpriteRenderer>().color = new Color(0.30196078f,1f, 0.30196078f);
+	}		
+	
 	public void RevivePlayer(){
 		ContinuePlayer();
 		isDead = false;
@@ -195,23 +189,6 @@ public class PlayerScript : MonoBehaviour {
 			Destroy(wallEffect,0.2f); 
 		}
 	}
-
-	void SlowMotion(){
-		if (allowSlowMotion == true && Input.GetMouseButton(0)){
-			// TODO, this will caused laggy
-			// Time.timeScale = 0.05f;
-			// Time.fixedDeltaTime = 0.02F * Time.timeScale;
-		}
-		else{
-			NormalMotion();
-		}
-	}
-
-	void NormalMotion(){
-		// Time.timeScale = 1;
-    	// Time.fixedDeltaTime = 0.02F ;
-	}
-
 	void FallChecking(){
 		if(rigidBody2DComponent.velocity.y <= 0){
 			rigidBody2DComponent.isKinematic = false;
@@ -220,36 +197,18 @@ public class PlayerScript : MonoBehaviour {
 	}
 
 	IEnumerator Fall(){
-		GameObject shootEffect = Instantiate(shootEffectPrefab,transform.position, Quaternion.identity);
-		shootEffect.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.HSVToRGB(hueValue,0.6f,0.6f);
-
 		currentPlayerState = PlayerState.Falling;
 		boxCollider2D.enabled = true;
 
 		rigidBody2DComponent.isKinematic = true;
 		rigidBody2DComponent.velocity = new Vector2(0,0);
 
-		allowSlowMotion = true;
-
 		yield return new WaitForSeconds(stunTime);
-
-		// Revert back
-		allowSlowMotion = false;
-		NormalMotion();
 
 		rigidBody2DComponent.isKinematic = false;
 		rigidBody2DComponent.velocity = new Vector2(0,-fallSpeed);
-		Destroy(shootEffect);
-		ChangeBackgroundColor();
 		yield break;
 	}
 
-	void ChangeBackgroundColor(){
-		Camera.main.backgroundColor = Color.HSVToRGB(hueValue,0.6f,0.6f);
-		hueValue += Random.Range(0.1f,0.2f);
-		if(hueValue >= 1f){
-			hueValue = 0;
-		}
-	}
 
 }

@@ -13,13 +13,12 @@ MonoBehaviour:
   m_Name: JumpShootAgent_Learning
   m_EditorClassIdentifier: 
   brainParameters:
-    vectorObservationSize: 26
-    numStackedVectorObservations: 10
-    vectorActionSize: 0200000002000000
+    vectorObservationSize: 9
+    numStackedVectorObservations: 30
+    vectorActionSize: 02000000
     cameraResolutions: []
     vectorActionDescriptions:
     - Jump
-    - Shoot
     vectorActionSpaceType: 0
-  model: {fileID: 11400002, guid: 8f010b74a0ef4f443be9df71b18b55d1, type: 3}
+  model: {fileID: 11400002, guid: 67f832b6181f6fe4f8c71e436bca83f9, type: 3}
   inferenceDevice: 1

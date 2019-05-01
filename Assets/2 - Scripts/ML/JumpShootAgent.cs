@@ -13,7 +13,6 @@ public class JumpShootAgent : Agent
     private JumpShootArea agentArea;
     private RayPerception2D rayPerception;
     public TextMeshPro scoreText;
-
     private float reward;
 
     /// <summary>
@@ -21,6 +20,7 @@ public class JumpShootAgent : Agent
     /// </summary>
     public override void InitializeAgent()
     {
+        StartCoroutine(WaitAwhile());
         base.InitializeAgent();
         agentAcademy = FindObjectOfType<JumpShootAcademy>();
         playerComponent = GetComponent<PlayerScript>();
@@ -28,31 +28,42 @@ public class JumpShootAgent : Agent
         // agentArea = area.GetComponent<JumpShootArea>();
     }
 
+    IEnumerator WaitAwhile(){
+        yield return new WaitForSeconds(0.5f);
+    }
+
     /// <summary>
     /// Collect all observations that the agent will use to make decisions
     /// </summary>
     public override void CollectObservations(){
-        float rayDistance = 6f;
-        float[] rayAngles = { 30f, 150f };
-        float rayDistanceShort = 4f;
-        float[] rayAnglesShort = { 60f, 120f, 90f };
-        float rayDistanceDown = 2.5f;
-        float[] rayAnglesDown = { 250f, 290f };
-        string[] detectableObjects = { "Ground" };
-        rayPerception = GetComponent<RayPerception2D>();
+        // float rayDistance = 6f;
+        // float[] rayAngles = { 30f, 150f };
+        // float rayDistanceShort = 4f;
+        // float[] rayAnglesShort = { 60f, 120f, 90f };
+        // float rayDistanceDown = 2.5f;
+        // float[] rayAnglesDown = { 250f, 290f };
+        // string[] detectableObjects = { "Ground" };
+        // rayPerception = GetComponent<RayPerception2D>();
         
-        AddVectorObs(rayPerception.Perceive(rayDistance, rayAngles, detectableObjects));
-        AddVectorObs(rayPerception.Perceive(rayDistanceShort, rayAnglesShort, detectableObjects));
-        AddVectorObs(rayPerception.Perceive(rayDistanceDown, rayAnglesDown, detectableObjects));
+        // AddVectorObs(rayPerception.Perceive(rayDistance, rayAngles, detectableObjects));
+        // AddVectorObs(rayPerception.Perceive(rayDistanceShort, rayAnglesShort, detectableObjects));
+        // AddVectorObs(rayPerception.Perceive(rayDistanceDown, rayAnglesDown, detectableObjects));
 
-        GroundScript parent = transform.parent.GetComponent<GroundScript>();
-        float angle = 0;
-        if(parent != null){
-            angle = parent.angle;
+        // GroundScript parent = transform.parent.GetComponent<GroundScript>();
+        // float angle = 0;
+        // if(parent != null){
+        //     angle = parent.angle;
+        // }
+        if(agentArea == null){
+            agentArea = area.GetComponent<JumpShootArea>();
         }
+        AddVectorObs(agentArea.GetGround(playerComponent.stepCount-1).localPosition.x);
+        AddVectorObs(agentArea.GetGround(playerComponent.stepCount-1).localPosition.y);
+        AddVectorObs(Mathf.Sin(agentArea.GetGround(playerComponent.stepCount-1).GetComponent<GroundScript>().GetVelocity()));
         AddVectorObs(transform.localPosition.x);
+        AddVectorObs(transform.localPosition.y);
+        AddVectorObs(playerComponent.ParentVelocity());;
         AddVectorObs((int)playerComponent.currentPlayerState,3);
-        AddVectorObs(Mathf.Sin(angle)); // normalize to -1 to 1, since ground script decide direction based on this
     }
 
     public override void AgentAction(float[] vectorAction, string textAction)
@@ -65,13 +76,13 @@ public class JumpShootAgent : Agent
             Debug.Log("I dont like jump");
        }
 
-       if(vectorAction[1] == 1){
-           AddReward(playerComponent.InputFall());
-           Debug.Log("I wanna Fall");
-       }
-       else{
-            Debug.Log("I dont like fall");
-       }
+    //    if(vectorAction[1] == 1){
+    //        AddReward(playerComponent.InputFall());
+    //        Debug.Log("I wanna Fall");
+    //    }
+    //    else{
+    //         Debug.Log("I dont like fall");
+    //    }
 
        if(playerComponent.currentPlayerState == PlayerScript.PlayerState.Jumping){
 			// AddReward(0.1f);
@@ -80,7 +91,7 @@ public class JumpShootAgent : Agent
 			// AddReward(0.01f);
 		}
 		else{
-			AddReward(0.5f);
+			AddReward(0.3f);
 		}
 
         // Reward
@@ -102,9 +113,7 @@ public class JumpShootAgent : Agent
     }
 
     public void EspisodeDone(){
-        agentAcademy.done = true;
-        Done();
-        Debug.Log("Done Espisode");
+        agentAcademy.AddDone();
     }
 
     private float MinMaxNormalize(float val, float max, float min){

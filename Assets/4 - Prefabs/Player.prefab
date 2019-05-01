@@ -163,11 +163,8 @@ MonoBehaviour:
   isDead: 0
   previousPosXParent: 0
   ScreenRadiusInWorldX: 0
-  hueValue: 0
   currentPlayerState: 0
-  standingGroundType: 0
-  initialCollide: 0
-  allowSlowMotion: 0
+  stepCount: 0
 --- !u!96 &6538952438180962506
 TrailRenderer:
   serializedVersion: 2
@@ -303,14 +300,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 545936deb1add3548b75851f97478507, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brain: {fileID: 11400000, guid: 5d9e1d7f7ca454348bc7028d9d1f5fc8, type: 2}
+  brain: {fileID: 11400000, guid: 0ba5f20fe8b16764f955bb2389aa4d97, type: 2}
   agentParameters:
     agentCameras: []
     agentRenderTextures: []
     maxStep: 0
     resetOnDone: 1
     onDemandDecision: 0
-    numberOfActionsBetweenDecisions: 1
+    numberOfActionsBetweenDecisions: 30
   area: {fileID: 0}
   scoreText: {fileID: 0}
 --- !u!114 &165670920219876175

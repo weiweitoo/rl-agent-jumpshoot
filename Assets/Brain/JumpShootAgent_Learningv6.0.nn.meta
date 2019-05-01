@@ -1,8 +1,8 @@
 fileFormatVersion: 2
-guid: 0c779bd93060f405cbe4446e1dcbf2a6
+guid: 67f832b6181f6fe4f8c71e436bca83f9
 ScriptedImporter:
   fileIDToRecycleName:
-    11400000: Assets/ML-Agents/Examples/Reacher/TFModels/ReacherLearning.nn
+    11400002: Assets/Brain/JumpShootAgent_Learningv6.0.nn
   externalObjects: {}
   userData: 
   assetBundleName: 
